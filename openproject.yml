@@ -1,0 +1,71 @@
+---
+- hosts: openproject
+  remote_user: root
+  tasks:
+  - name: Update apt cache
+    sudo: yes
+    apt: update_cache=yes
+  - name: Install python packages
+    sudo: yes
+    apt: pkg={{ item }} state=present
+    with_items:
+      - vim
+      - python-pycurl
+      - python-mysqldb
+  - name: Install Apache2
+    apt: name=apache2 update_cache=yes state=latest
+  - name: Install make
+    apt: name=make update_cache=yes state=latest
+  - name: Install autoconf
+    apt: name=autoconf update_cache=yes state=latest
+  - name: Install automake
+    apt: name=automake update_cache=yes state=latest
+  - name: enabled mod_rewrite
+    apache2_module: name=rewrite state=present
+    notify:
+      - restart apache2
+  - name: Add ruby to bashrc
+    lineinfile: dest=/root/.bashrc
+                regexp=''
+                insertafter=EOF
+                line="PATH=\"$(ruby -e \'print Gem.user_dir\')/bin:$PATH\""
+  - name: add brightbox ruby repository
+    apt_repository: repo='ppa:brightbox/ruby-ng'
+  - name: install ruby 2.1
+    apt: pkg=ruby2.1 state=present
+  - name: install ruby 2.1 dev headers
+    apt: pkg=ruby2.1-dev state=present
+  - name: install gcc
+    apt: pkg=gcc state=present
+  - name: Install gem Bundler
+    gem: name=bundler state=latest user_install=no
+  - name: Install Unicorn
+    gem: name=unicorn state=latest
+  - name: install mysql-client
+    apt: pkg=mysql-client-core-5.5 state=present
+  - name: Install Postfix
+    apt: pkg=postfix state=installed update_cache=true
+    notify:
+      - start postfix
+  - name: Configre Postfix for use with openproject
+    lineinfile:
+      dest=/etc/postfix/main.cf
+      line="{{ item.line }}"
+    with_items:
+      - { line: 'smtp_sasl_auth_enable = yes' }
+      - { line: 'smtp_sasl_security_options = noanonymous' }
+      - { line: 'smtp_use_tls = yes' }
+      - { line: 'relayhost = [xx.xx.xx]' }
+    notify:
+      - restart postfix
+  - name: Install OpenProject Repo
+    apt_repository: repo='deb https://deb.packager.io/gh/opf/openproject-ce trusty stable/5' state=present
+  - apt_key: url=https://deb.packager.io/key state=present
+  - apt: name=openproject state=latest install_recommends=yes force=yes
+  handlers:
+    - name: restart apache2
+      service: name=apache2 state=restarted
+    - name: start postfix
+      service: name=postfix state=started
+    - name: restart postfix
+      service: name=postfix state=restarted
