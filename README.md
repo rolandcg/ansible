@@ -1,7 +1,7 @@
 # ansible
 Here I store the ansible configuration I need for my serverproject
 
-A couple of weeks ago, I started a project in my "lab", where I want to build a distributed setup for PHP an Java applications, running serveral LXC containers on my server.
+A couple of weeks ago, I started a project in my "lab", where I want to build a distributed setup for PHP and Java applications, running serveral LXC containers on my server.
 
 You can read all about what's happening on my site: serverblog.panikknopf.de .
 
